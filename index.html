@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video & Game Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+        .tab-active { background-color: #3b82f6; color: white; }
+        .tab-inactive { background-color: #1e293b; color: #94a3b8; }
+        canvas { display: none; }
+    </style>
+</head>
+<body class="min-h-screen p-4">
+
+    <!-- Header -->
+    <div class="max-w-4xl mx-auto text-center mb-8">
+        <h1 class="text-3xl font-bold text-white mb-2">🚀 Creator Studio</h1>
+        <p class="text-gray-400">100% Free • Runs in your browser</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="max-w-4xl mx-auto flex justify-center gap-4 mb-8">
+        <button onclick="switchTab('generator')" id="btn-generator" class="tab-active px-6 py-2 rounded-full font-bold transition">AI Faceless Video</button>
+        <button onclick="switchTab('recorder')" id="btn-recorder" class="tab-inactive px-6 py-2 rounded-full font-bold transition">Gamer Screen Recorder</button>
+    </div>
+
+    <!-- ================= TAB 1: AI GENERATOR ================= -->
+    <div id="tab-generator" class="max-w-3xl mx-auto bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+        <h2 class="text-xl font-bold mb-4">Generate Video from Script</h2>
+        <textarea id="ai-topic" rows="3" class="w-full bg-slate-900 border border-slate-600 rounded p-3 text-white mb-4" placeholder="Enter a topic (e.g., '3 scary facts about the ocean') or paste a script..."></textarea>
+        
+        <div class="flex gap-4 mb-6">
+            <button onclick="generateAIVideo()" id="gen-btn" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded font-bold w-full transition">✨ Generate Video</button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="ai-progress-container" class="hidden mb-6">
+            <div class="bg-slate-900 rounded-full h-4 w-full overflow-hidden">
+                <div id="ai-progress-bar" class="bg-green-500 h-4 w-0 transition-all duration-300"></div>
+            </div>
+            <p id="ai-status" class="text-sm text-gray-400 mt-2 text-center">Starting AI...</p>
+        </div>
+
+        <!-- Output Video -->
+        <div id="ai-output" class="hidden flex flex-col items-center">
+            <video id="final-video" controls class="w-full max-w-sm rounded-lg shadow-xl mb-4"></video>
+            <a id="download-link" download="ai-video.mp4" class="bg-green-600 hover:bg-green-500 text-white px-8 py-3 rounded font-bold transition">⬇️ Download MP4</a>
+        </div>
+    </div>
+
+    <!-- ================= TAB 2: SCREEN RECORDER ================= -->
+    <div id="tab-recorder" class="max-w-3xl mx-auto bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700 hidden">
+        <h2 class="text-xl font-bold mb-4">Record Gameplay + Facecam</h2>
+        <p class="text-gray-400 text-sm mb-6">This runs entirely in your browser. No servers. Zero lag.</p>
+        
+        <div class="flex gap-4 mb-6">
+            <button onclick="startRecording()" id="rec-start" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded font-bold w-full transition text-lg">🔴 Start Recording</button>
+            <button onclick="stopRecording()" id="rec-stop" class="bg-slate-600 hover:bg-slate-500 text-white px-6 py-3 rounded font-bold w-full transition text-lg hidden">⏹️ Stop & Save</button>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center border border-slate-700">
+            <video id="rec-preview" autoplay muted class="w-full h-full object-contain"></video>
+        </div>
+        <canvas id="rec-canvas"></canvas>
+    </div>
+
+    <!-- Load FFmpeg for Video Processing -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+
+    <script>
+        // ==========================================
+        // ⚠️ PASTE YOUR CLOUDFLARE WORKER URL HERE
+        // ==========================================
+        const WORKER_URL = "YOUR_WORKER_URL_HERE"; 
+
+        // --- TAB SWITCHING ---
+        function switchTab(tab) {
+            document.getElementById('tab-generator').classList.add('hidden');
+            document.getElementById('tab-recorder').classList.add('hidden');
+            document.getElementById('btn-generator').className = 'tab-inactive px-6 py-2 rounded-full font-bold transition';
+            document.getElementById('btn-recorder').className = 'tab-inactive px-6 py-2 rounded-full font-bold transition';
+
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.getElementById('btn-' + tab).className = 'tab-active px-6 py-2 rounded-full font-bold transition';
+        }
+
+        // ==========================================
+        // MODULE 1: AI VIDEO GENERATOR
+        // ==========================================
+        async function generateAIVideo() {
+            const topic = document.getElementById('ai-topic').value;
+            if (!topic) return alert("Please enter a topic or script.");
+
+            const btn = document.getElementById('gen-btn');
+            const progressContainer = document.getElementById('ai-progress-container');
+            const progressBar = document.getElementById('ai-progress-bar');
+            const statusText = document.getElementById('ai-status');
+            const outputDiv = document.getElementById('ai-output');
+
+            btn.disabled = true;
+            btn.innerText = "Working...";
+            progressContainer.classList.remove('hidden');
+            outputDiv.classList.add('hidden');
+            progressBar.style.width = '10%';
+            statusText.innerText = "Generating script with AI...";
+
+            try {
+                // 1. Get Script
+                const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic })
+                });
+                const scriptData = await scriptRes.json();
+                const script = scriptData.script;
+                
+                progressBar.style.width = '30%';
+                statusText.innerText = "Fetching stock footage from Pexels...";
+
+                // 2. Get Stock Video (using first 3 words of script)
+                const keyword = script.split(" ").slice(0, 3).join(" ");
+                const stockRes = await fetch(`${WORKER_URL}/api/stock?q=${encodeURIComponent(keyword)}`);
+                const stockData = await stockRes.json();
+                
+                progressBar.style.width = '50%';
+                statusText.innerText = "Downloading assets to browser...";
+
+                // 3. Render using FFmpeg.wasm (Simplified for MVP)
+                const { createFFmpeg, fetchFile } = FFmpeg;
+                const ffmpeg = createFFmpeg({ log: true });
+                await ffmpeg.load();
+
+                progressBar.style.width = '70%';
+                statusText.innerText = "Merging video and rendering MP4...";
+
+                // Fetch the stock video
+                ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(stockData.videoUrl));
+                
+                // Simulate rendering a 10-second video with text overlay (FFmpeg web is tricky, so we do a basic cut for the MVP)
+                await ffmpeg.run('-i', 'input.mp4', '-t', '10', '-c', 'copy', 'output.mp4');
+                
+                const data = ffmpeg.FS('readFile', 'output.mp4');
+                const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
+                const videoUrl = URL.createObjectURL(videoBlob);
+
+                progressBar.style.width = '100%';
+                statusText.innerText = "Done!";
+                
+                // Show Result
+                document.getElementById('final-video').src = videoUrl;
+                document.getElementById('download-link').href = videoUrl;
+                outputDiv.classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                alert("Error: " + error.message);
+                progressContainer.classList.add('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "✨ Generate Video";
+            }
+        }
+
+        // ==========================================
+        // MODULE 2: SCREEN RECORDER
+        // ==========================================
+        let mediaRecorder;
+        let recordedChunks = [];
+        let screenStream, camStream, micStream;
+        let animationFrameId;
+        
+        const canvas = document.getElementById('rec-canvas');
+        const ctx = canvas.getContext('2d');
+        const preview = document.getElementById('rec-preview');
+
+        async function startRecording() {
+            try {
+                // 1. Get Screen, Camera, and Mic
+                screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
+                camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                const screenVideo = document.createElement('video');
+                screenVideo.srcObject = screenStream;
+                await screenVideo.play();
+
+                const camVideo = document.createElement('video');
+                camVideo.srcObject = camStream;
+                await camVideo.play();
+
+                // 2. Setup Canvas
+                canvas.width = screenVideo.videoWidth;
+                canvas.height = screenVideo.videoHeight;
+
+                // 3. Combine Screen + Facecam
+                function drawFrame() {
+                    ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+                    
+                    // Draw Facecam in bottom right corner
+                    const camSize = 250;
+                    const padding = 20;
+                    ctx.drawImage(camVideo, canvas.width - camSize - padding, canvas.height - camSize - padding, camSize, camSize);
+                    
+                    animationFrameId = requestAnimationFrame(drawFrame);
+                }
+                drawFrame();
+
+                preview.srcObject = canvas.captureStream(30);
+                preview.play();
+
+                // 4. Mix Audio (Game + Mic)
+                const audioCtx = new AudioContext();
+                const dest = audioCtx.createMediaStreamDestination();
+                
+                if (screenStream.getAudioTracks().length > 0) {
+                    audioCtx.createMediaStreamSource(screenStream).connect(dest);
+                }
+                audioCtx.createMediaStreamSource(micStream).connect(dest);
+
+                // 5. Combine final stream and record
+                const combinedStream = new MediaStream([
+                    ...canvas.captureStream(30).getVideoTracks(),
+                    ...dest.stream.getAudioTracks()
+                ]);
+
+                mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm; codecs=vp9' });
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                mediaRecorder.onstop = saveRecording;
+                
+                mediaRecorder.start();
+                
+                document.getElementById('rec-start').classList.add('hidden');
+                document.getElementById('rec-stop').classList.remove('hidden');
+
+            } catch (err) {
+                console.error(err);
+                alert("Permissions denied or error starting recorder.");
+            }
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            screenStream.getTracks().forEach(t => t.stop());
+            camStream.getTracks().forEach(t => t.stop());
+            micStream.getTracks().forEach(t => t.stop());
+            cancelAnimationFrame(animationFrameId);
+
+            document.getElementById('rec-start').classList.remove('hidden');
+            document.getElementById('rec-stop').classList.add('hidden');
+        }
+
+        function saveRecording() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'gameplay-clip.webm';
+            a.click();
+            recordedChunks = [];
+        }
+    </script>
+</body>
+</html>

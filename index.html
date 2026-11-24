@@ -74,7 +74,7 @@
         // ==========================================
         // ⚠️ PASTE YOUR CLOUDFLARE WORKER URL HERE
         // ==========================================
-        const WORKER_URL = "https://video-backend.taimoor-28092001.workers.dev/"; 
+        const WORKER_URL = "https://video-backend.taimoor-28092001.workers.dev"; 
 
         // --- TAB SWITCHING ---
         function switchTab(tab) {
@@ -109,16 +109,23 @@
 
             try {
                 // 1. Get Script
-                const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
+                                const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ topic })
                 });
-                const scriptData = await scriptRes.json();
                 
-                // SAFETY CHECK
+                const responseText = await scriptRes.text();
+                let scriptData;
+                try {
+                    scriptData = JSON.parse(responseText);
+                } catch (err) {
+                    throw new Error("Worker returned invalid data: " + responseText);
+                }
+                
                 if (!scriptRes.ok || !scriptData.script) {
-                    throw new Error(scriptData.error || "Failed to generate script. Check your Gemini API key.");
+                    throw new Error(scriptData.error || "Failed to generate script.");
+                }
                 }
                 
                 const script = scriptData.script;

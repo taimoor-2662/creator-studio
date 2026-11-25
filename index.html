@@ -67,14 +67,14 @@
         <canvas id="rec-canvas"></canvas>
     </div>
 
-    <!-- Load FFmpeg for Video Processing -->
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+    <!-- Load FFmpeg (Stable Version for Browser) -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
     <script>
         // ==========================================
         // ⚠️ PASTE YOUR CLOUDFLARE WORKER URL HERE
         // ==========================================
-        const WORKER_URL = "https://video-backend.taimoor-28092001.workers.dev"; 
+        const WORKER_URL = "https://video-backend.taimoor-28092001.workers.dev";
 
         // --- TAB SWITCHING ---
         function switchTab(tab) {
@@ -109,7 +109,7 @@
 
             try {
                 // 1. Get Script
-                                const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
+                const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ topic })
@@ -126,38 +126,35 @@
                 if (!scriptRes.ok || !scriptData.script) {
                     throw new Error(scriptData.error || "Failed to generate script.");
                 }
-                }
                 
                 const script = scriptData.script;
                 
                 progressBar.style.width = '30%';
                 statusText.innerText = "Fetching stock footage...";
 
-                // 2. Get Stock Video (using first 3 words of script)
+                // 2. Get Stock Video
                 const keyword = script.split(" ").slice(0, 3).join(" ");
                 const stockRes = await fetch(`${WORKER_URL}/api/stock?q=${encodeURIComponent(keyword)}`);
                 const stockData = await stockRes.json();
                 
-                // SAFETY CHECK
                 if (!stockRes.ok || !stockData.videoUrl) {
-                    throw new Error(stockData.error || "Failed to fetch stock video. Check your Pixabay API key.");
+                    throw new Error(stockData.error || "Failed to fetch stock video.");
                 }
                 
                 progressBar.style.width = '50%';
-                statusText.innerText = "Downloading assets to browser...";
+                statusText.innerText = "Loading FFmpeg Engine...";
 
-                // 3. Render using FFmpeg.wasm
+                // 3. Render using FFmpeg.wasm (v0.11.6 syntax)
                 const { createFFmpeg, fetchFile } = FFmpeg;
-                const ffmpeg = createFFmpeg({ log: true });
+                const ffmpeg = createFFmpeg({ log: false });
                 await ffmpeg.load();
 
                 progressBar.style.width = '70%';
-                statusText.innerText = "Merging video and rendering MP4...";
+                statusText.innerText = "Downloading video & Rendering MP4...";
 
-                // Fetch the stock video
                 ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(stockData.videoUrl));
                 
-                // Render a 10-second video
+                // Cut to 10 seconds
                 await ffmpeg.run('-i', 'input.mp4', '-t', '10', '-c', 'copy', 'output.mp4');
                 
                 const data = ffmpeg.FS('readFile', 'output.mp4');
@@ -196,7 +193,6 @@
 
         async function startRecording() {
             try {
-                // 1. Get Screen, Camera, and Mic
                 screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
                 camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -209,19 +205,14 @@
                 camVideo.srcObject = camStream;
                 await camVideo.play();
 
-                // 2. Setup Canvas
                 canvas.width = screenVideo.videoWidth;
                 canvas.height = screenVideo.videoHeight;
 
-                // 3. Combine Screen + Facecam
                 function drawFrame() {
                     ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-                    
-                    // Draw Facecam in bottom right corner
                     const camSize = 250;
                     const padding = 20;
                     ctx.drawImage(camVideo, canvas.width - camSize - padding, canvas.height - camSize - padding, camSize, camSize);
-                    
                     animationFrameId = requestAnimationFrame(drawFrame);
                 }
                 drawFrame();
@@ -229,7 +220,6 @@
                 preview.srcObject = canvas.captureStream(30);
                 preview.play();
 
-                // 4. Mix Audio (Game + Mic)
                 const audioCtx = new AudioContext();
                 const dest = audioCtx.createMediaStreamDestination();
                 
@@ -238,7 +228,6 @@
                 }
                 audioCtx.createMediaStreamSource(micStream).connect(dest);
 
-                // 5. Combine final stream and record
                 const combinedStream = new MediaStream([
                     ...canvas.captureStream(30).getVideoTracks(),
                     ...dest.stream.getAudioTracks()

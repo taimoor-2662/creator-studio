@@ -5,47 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Video & Game Studio</title>
     <style>
-        /* Custom CSS to replace Tailwind */
-        :root {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --bg-input: #0f172a;
-            --border-color: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --blue: #3b82f6;
-            --blue-hover: #2563eb;
-            --red: #ef4444;
-            --red-hover: #dc2626;
-            --green: #22c55e;
-            --green-hover: #16a34a;
-            --slate: #475569;
-            --slate-hover: #334155;
-        }
-
+        :root { --bg-dark: #0f172a; --bg-card: #1e293b; --bg-input: #0f172a; --border-color: #334155; --text-main: #f8fafc; --text-muted: #94a3b8; --blue: #3b82f6; --blue-hover: #2563eb; --red: #ef4444; --red-hover: #dc2626; --green: #22c55e; --green-hover: #16a34a; --slate: #475569; --slate-hover: #334155; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background-color: var(--bg-dark); color: var(--text-main); min-height: 100vh; padding: 1rem; display: flex; flex-direction: column; align-items: center; }
-        
-        /* Header */
         .header { text-align: center; margin-bottom: 2rem; margin-top: 2rem; }
         .header h1 { font-size: 2rem; font-weight: bold; margin-bottom: 0.5rem; }
         .header p { color: var(--text-muted); }
-        
-        /* Tabs */
         .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; }
         .tab-btn { padding: 0.5rem 1.5rem; border-radius: 999px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; font-size: 1rem; }
         .tab-active { background-color: var(--blue); color: white; }
         .tab-inactive { background-color: var(--bg-card); color: var(--text-muted); }
         .tab-inactive:hover { background-color: #334155; }
-        
-        /* Cards */
         .card { background-color: var(--bg-card); padding: 1.5rem; border-radius: 0.75rem; border: 1px solid var(--border-color); width: 100%; max-width: 48rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .card h2 { font-size: 1.25rem; font-weight: bold; margin-bottom: 1rem; }
-        
-        /* Forms & Buttons */
         textarea, input { width: 100%; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 0.375rem; padding: 0.75rem; color: white; margin-bottom: 1rem; resize: vertical; font-size: 1rem; }
         textarea:focus, input:focus { outline: none; border-color: var(--blue); }
-        
         .btn { padding: 0.75rem; border-radius: 0.375rem; font-weight: bold; border: none; cursor: pointer; width: 100%; transition: 0.2s; font-size: 1rem; display: flex; justify-content: center; align-items: center; gap: 0.5rem; color: white; }
         .btn-blue { background-color: var(--blue); }
         .btn-blue:hover { background-color: var(--blue-hover); }
@@ -55,45 +29,37 @@
         .btn-slate:hover { background-color: var(--slate-hover); }
         .btn-green { background-color: var(--green); text-decoration: none; display: inline-block; width: auto; padding: 0.75rem 2rem; margin-top: 1rem; }
         .btn-green:hover { background-color: var(--green-hover); }
-        
-        /* Progress Bar */
         .progress-container { background-color: var(--bg-input); border-radius: 999px; height: 1rem; width: 100%; overflow: hidden; margin-bottom: 0.5rem; }
         .progress-bar { background-color: var(--green); height: 100%; width: 0%; transition: width 0.3s ease; }
         .status-text { font-size: 0.875rem; color: var(--text-muted); text-align: center; margin-bottom: 1.5rem; }
-        
-        /* Recorder Preview */
         .preview-container { background-color: black; border-radius: 0.5rem; overflow: hidden; width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-color); }
         video { width: 100%; height: 100%; object-fit: contain; }
         canvas { display: none; }
-        
-        /* Utilities */
         .hidden { display: none !important; }
         .flex-col { display: flex; flex-direction: column; align-items: center; }
         .mt-4 { margin-top: 1rem; }
+        .debug-box { background: #0b1120; padding: 1rem; border-radius: 0.5rem; border: 1px solid #1e293b; margin-bottom: 1rem; font-size: 0.875rem; width: 100%; }
+        .debug-box span { color: #38bdf8; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
     <div class="header">
         <h1>🚀 Creator Studio</h1>
         <p>100% Free • Runs in your browser</p>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
         <button onclick="switchTab('generator')" id="btn-generator" class="tab-btn tab-active">AI Faceless Video</button>
         <button onclick="switchTab('recorder')" id="btn-recorder" class="tab-btn tab-inactive">Gamer Screen Recorder</button>
     </div>
 
-    <!-- ================= TAB 1: AI GENERATOR ================= -->
     <div id="tab-generator" class="card">
         <h2>Generate Video from Script</h2>
-        <textarea id="ai-topic" rows="3" placeholder="Enter a topic (e.g., '3 scary facts about the ocean') or paste a script..."></textarea>
+        <textarea id="ai-topic" rows="3" placeholder="Enter a topic..."></textarea>
         
         <button onclick="generateAIVideo()" id="gen-btn" class="btn btn-blue">✨ Generate Video</button>
 
-        <!-- Progress Bar -->
         <div id="ai-progress-container" class="hidden mt-4">
             <div class="progress-container">
                 <div id="ai-progress-bar" class="progress-bar"></div>
@@ -101,53 +67,45 @@
             <p id="ai-status" class="status-text">Starting AI...</p>
         </div>
 
-        <!-- Output Video -->
         <div id="ai-output" class="hidden flex-col mt-4">
+            <!-- Debug Info -->
+            <div class="debug-box">
+                <strong>🎬 AI Script:</strong> <br><span id="debug-script" style="color:#fff; font-weight:normal;"></span><br><br>
+                <strong>🔍 Stock Footage Search Term:</strong> <br><span id="debug-keyword"></span>
+            </div>
+            
             <video id="final-video" controls></video>
             <a id="download-link" download="ai-video.mp4" class="btn btn-green">⬇️ Download MP4</a>
         </div>
     </div>
 
-    <!-- ================= TAB 2: SCREEN RECORDER ================= -->
     <div id="tab-recorder" class="card hidden">
         <h2>Record Gameplay + Facecam</h2>
         <p class="status-text" style="text-align: left; margin-bottom: 1rem;">This runs entirely in your browser. No servers. Zero lag.</p>
-        
         <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
             <button onclick="startRecording()" id="rec-start" class="btn btn-red">🔴 Start Recording</button>
             <button onclick="stopRecording()" id="rec-stop" class="btn btn-slate hidden">⏹️ Stop & Save</button>
         </div>
-
-        <!-- Live Preview -->
         <div class="preview-container">
             <video id="rec-preview" autoplay muted></video>
         </div>
         <canvas id="rec-canvas"></canvas>
     </div>
 
-    <!-- Load FFmpeg (Stable Version for Browser) -->
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
 
     <script>
-        // ==========================================
-        // ⚠️ PASTE YOUR CLOUDFLARE WORKER URL HERE
-        // ==========================================
         const WORKER_URL = "https://video-backend.taimoor-28092001.workers.dev"; 
 
-        // --- TAB SWITCHING ---
         function switchTab(tab) {
             document.getElementById('tab-generator').classList.add('hidden');
             document.getElementById('tab-recorder').classList.add('hidden');
             document.getElementById('btn-generator').className = 'tab-btn tab-inactive';
             document.getElementById('btn-recorder').className = 'tab-btn tab-inactive';
-
             document.getElementById('tab-' + tab).classList.remove('hidden');
             document.getElementById('btn-' + tab).className = 'tab-btn tab-active';
         }
 
-        // ==========================================
-        // MODULE 1: AI VIDEO GENERATOR
-        // ==========================================
         async function generateAIVideo() {
             const topic = document.getElementById('ai-topic').value;
             if (!topic) return alert("Please enter a topic or script.");
@@ -166,44 +124,28 @@
             statusText.innerText = "Generating script with AI...";
 
             try {
-                // 1. Get Script and Visual Keyword
                 const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ topic })
                 });
                 
-                const responseText = await scriptRes.text();
-                let scriptData;
-                try {
-                    scriptData = JSON.parse(responseText);
-                } catch (err) {
-                    throw new Error("Worker returned invalid data: " + responseText);
-                }
-                
-                if (!scriptRes.ok || !scriptData.script) {
-                    throw new Error(scriptData.error || "Failed to generate script.");
-                }
+                const scriptData = await scriptRes.json();
+                if (!scriptRes.ok || !scriptData.script) throw new Error(scriptData.error || "Failed to generate script.");
                 
                 const script = scriptData.script;
-                // THIS IS THE FIX: Use the AI's visual keyword, fallback to topic if missing
                 const keyword = scriptData.visual_keyword || topic;
                 
                 progressBar.style.width = '30%';
                 statusText.innerText = `Fetching footage for: "${keyword}"...`;
 
-                // 2. Get Stock Video
                 const stockRes = await fetch(`${WORKER_URL}/api/stock?q=${encodeURIComponent(keyword)}`);
                 const stockData = await stockRes.json();
-                
-                if (!stockRes.ok || !stockData.videoUrl) {
-                    throw new Error(stockData.error || "Failed to fetch stock video.");
-                }
+                if (!stockRes.ok || !stockData.videoUrl) throw new Error(stockData.error || "Failed to fetch stock video.");
                 
                 progressBar.style.width = '50%';
                 statusText.innerText = "Loading FFmpeg Engine...";
 
-                // 3. Render using FFmpeg.wasm (v0.11.6 syntax)
                 const { createFFmpeg, fetchFile } = FFmpeg;
                 const ffmpeg = createFFmpeg({ log: false });
                 await ffmpeg.load();
@@ -212,8 +154,6 @@
                 statusText.innerText = "Downloading video & Rendering MP4...";
 
                 ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(stockData.videoUrl));
-                
-                // Cut to 10 seconds
                 await ffmpeg.run('-i', 'input.mp4', '-t', '10', '-c', 'copy', 'output.mp4');
                 
                 const data = ffmpeg.FS('readFile', 'output.mp4');
@@ -223,9 +163,13 @@
                 progressBar.style.width = '100%';
                 statusText.innerText = "Done!";
                 
-                // Show Result
                 document.getElementById('final-video').src = videoUrl;
                 document.getElementById('download-link').href = videoUrl;
+                
+                // SHOW DEBUG INFO
+                document.getElementById('debug-script').innerText = script;
+                document.getElementById('debug-keyword').innerText = keyword;
+                
                 outputDiv.classList.remove('hidden');
 
             } catch (error) {
@@ -238,94 +182,50 @@
             }
         }
 
-        // ==========================================
-        // MODULE 2: SCREEN RECORDER
-        // ==========================================
-        let mediaRecorder;
-        let recordedChunks = [];
-        let screenStream, camStream, micStream;
-        let animationFrameId;
-        
-        const canvas = document.getElementById('rec-canvas');
-        const ctx = canvas.getContext('2d');
-        const preview = document.getElementById('rec-preview');
+        let mediaRecorder; let recordedChunks = []; let screenStream, camStream, micStream; let animationFrameId;
+        const canvas = document.getElementById('rec-canvas'); const ctx = canvas.getContext('2d'); const preview = document.getElementById('rec-preview');
 
         async function startRecording() {
             try {
                 screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: true });
                 camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                 micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-                const screenVideo = document.createElement('video');
-                screenVideo.srcObject = screenStream;
-                await screenVideo.play();
-
-                const camVideo = document.createElement('video');
-                camVideo.srcObject = camStream;
-                await camVideo.play();
-
-                canvas.width = screenVideo.videoWidth;
-                canvas.height = screenVideo.videoHeight;
-
+                const screenVideo = document.createElement('video'); screenVideo.srcObject = screenStream; await screenVideo.play();
+                const camVideo = document.createElement('video'); camVideo.srcObject = camStream; await camVideo.play();
+                canvas.width = screenVideo.videoWidth; canvas.height = screenVideo.videoHeight;
                 function drawFrame() {
                     ctx.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
-                    const camSize = 250;
-                    const padding = 20;
+                    const camSize = 250; const padding = 20;
                     ctx.drawImage(camVideo, canvas.width - camSize - padding, canvas.height - camSize - padding, camSize, camSize);
                     animationFrameId = requestAnimationFrame(drawFrame);
                 }
                 drawFrame();
-
-                preview.srcObject = canvas.captureStream(30);
-                preview.play();
-
-                const audioCtx = new AudioContext();
-                const dest = audioCtx.createMediaStreamDestination();
-                
-                if (screenStream.getAudioTracks().length > 0) {
-                    audioCtx.createMediaStreamSource(screenStream).connect(dest);
-                }
+                preview.srcObject = canvas.captureStream(30); preview.play();
+                const audioCtx = new AudioContext(); const dest = audioCtx.createMediaStreamDestination();
+                if (screenStream.getAudioTracks().length > 0) audioCtx.createMediaStreamSource(screenStream).connect(dest);
                 audioCtx.createMediaStreamSource(micStream).connect(dest);
-
-                const combinedStream = new MediaStream([
-                    ...canvas.captureStream(30).getVideoTracks(),
-                    ...dest.stream.getAudioTracks()
-                ]);
-
+                const combinedStream = new MediaStream([...canvas.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()]);
                 mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm; codecs=vp9' });
                 mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = saveRecording;
-                
                 mediaRecorder.start();
-                
                 document.getElementById('rec-start').classList.add('hidden');
                 document.getElementById('rec-stop').classList.remove('hidden');
-
-            } catch (err) {
-                console.error(err);
-                alert("Permissions denied or error starting recorder.");
-            }
+            } catch (err) { console.error(err); alert("Permissions denied."); }
         }
 
         function stopRecording() {
             mediaRecorder.stop();
-            screenStream.getTracks().forEach(t => t.stop());
-            camStream.getTracks().forEach(t => t.stop());
-            micStream.getTracks().forEach(t => t.stop());
+            screenStream.getTracks().forEach(t => t.stop()); camStream.getTracks().forEach(t => t.stop()); micStream.getTracks().forEach(t => t.stop());
             cancelAnimationFrame(animationFrameId);
-
             document.getElementById('rec-start').classList.remove('hidden');
             document.getElementById('rec-stop').classList.add('hidden');
         }
 
         function saveRecording() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'gameplay-clip.webm';
-            a.click();
-            recordedChunks = [];
+            const url = URL.createObjectURL(blob); const a = document.createElement('a');
+            a.href = url; a.download = 'gameplay-clip.webm'; a.click(); recordedChunks = [];
         }
     </script>
 </body>

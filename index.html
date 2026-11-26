@@ -70,7 +70,6 @@
         .hidden { display: none !important; }
         .flex-col { display: flex; flex-direction: column; align-items: center; }
         .mt-4 { margin-top: 1rem; }
-        .gap-4 { gap: 1rem; }
     </style>
 </head>
 <body>
@@ -167,7 +166,7 @@
             statusText.innerText = "Generating script with AI...";
 
             try {
-                // 1. Get Script
+                // 1. Get Script and Visual Keyword
                 const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -187,12 +186,13 @@
                 }
                 
                 const script = scriptData.script;
+                // THIS IS THE FIX: Use the AI's visual keyword, fallback to topic if missing
+                const keyword = scriptData.visual_keyword || topic;
                 
                 progressBar.style.width = '30%';
-                statusText.innerText = "Fetching stock footage...";
+                statusText.innerText = `Fetching footage for: "${keyword}"...`;
 
                 // 2. Get Stock Video
-                const keyword = script.split(" ").slice(0, 3).join(" ");
                 const stockRes = await fetch(`${WORKER_URL}/api/stock?q=${encodeURIComponent(keyword)}`);
                 const stockData = await stockRes.json();
                 

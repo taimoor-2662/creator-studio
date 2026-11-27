@@ -68,14 +68,17 @@
         </div>
 
         <div id="ai-output" class="hidden flex-col mt-4">
-            <!-- Debug Info -->
             <div class="debug-box">
                 <strong>🎬 AI Script:</strong> <br><span id="debug-script" style="color:#fff; font-weight:normal;"></span><br><br>
-                <strong>🔍 Stock Footage Search Term:</strong> <br><span id="debug-keyword"></span>
+                <strong>🔍 Stock Footage:</strong> <br><span id="debug-keyword"></span>
             </div>
             
-            <video id="final-video" controls></video>
-            <a id="download-link" download="ai-video.mp4" class="btn btn-green">⬇️ Download MP4</a>
+            <video id="final-video" loop muted autoplay></video>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem; width: 100%;">
+                <button onclick="playVoiceover()" class="btn btn-blue" style="width: 50%;">🔊 Play Voiceover</button>
+                <a id="download-link" download="ai-video.mp4" class="btn btn-green" style="width: 50%; margin-top: 0;">⬇️ Download Video</a>
+            </div>
         </div>
     </div>
 
@@ -96,6 +99,7 @@
 
     <script>
         const WORKER_URL = "https://video-backend.taimoor-28092001.workers.dev"; 
+        let currentScript = ""; // Store script for TTS
 
         function switchTab(tab) {
             document.getElementById('tab-generator').classList.add('hidden');
@@ -108,7 +112,7 @@
 
         async function generateAIVideo() {
             const topic = document.getElementById('ai-topic').value;
-            if (!topic) return alert("Please enter a topic or script.");
+            if (!topic) return alert("Please enter a topic.");
 
             const btn = document.getElementById('gen-btn');
             const progressContainer = document.getElementById('ai-progress-container');
@@ -122,6 +126,9 @@
             outputDiv.classList.add('hidden');
             progressBar.style.width = '10%';
             statusText.innerText = "Generating script with AI...";
+            
+            // Stop any currently playing audio
+            window.speechSynthesis.cancel();
 
             try {
                 const scriptRes = await fetch(`${WORKER_URL}/api/script`, {
@@ -133,7 +140,7 @@
                 const scriptData = await scriptRes.json();
                 if (!scriptRes.ok || !scriptData.script) throw new Error(scriptData.error || "Failed to generate script.");
                 
-                const script = scriptData.script;
+                currentScript = scriptData.script;
                 const keyword = scriptData.visual_keyword || topic;
                 
                 progressBar.style.width = '30%';
@@ -154,7 +161,7 @@
                 statusText.innerText = "Downloading video & Rendering MP4...";
 
                 ffmpeg.FS('writeFile', 'input.mp4', await fetchFile(stockData.videoUrl));
-                await ffmpeg.run('-i', 'input.mp4', '-t', '10', '-c', 'copy', 'output.mp4');
+                await ffmpeg.run('-i', 'input.mp4', '-t', '15', '-c', 'copy', 'output.mp4');
                 
                 const data = ffmpeg.FS('readFile', 'output.mp4');
                 const videoBlob = new Blob([data.buffer], { type: 'video/mp4' });
@@ -165,12 +172,13 @@
                 
                 document.getElementById('final-video').src = videoUrl;
                 document.getElementById('download-link').href = videoUrl;
-                
-                // SHOW DEBUG INFO
-                document.getElementById('debug-script').innerText = script;
+                document.getElementById('debug-script').innerText = currentScript;
                 document.getElementById('debug-keyword').innerText = keyword;
                 
                 outputDiv.classList.remove('hidden');
+                
+                // Auto-play voiceover when done
+                playVoiceover();
 
             } catch (error) {
                 console.error(error);
@@ -182,6 +190,21 @@
             }
         }
 
+        // --- Text-to-Speech Logic ---
+        function playVoiceover() {
+            if (!currentScript) return;
+            window.speechSynthesis.cancel(); // Stop any current speech
+            
+            const utterance = new SpeechSynthesisUtterance(currentScript);
+            // You can change the voice here if you want (e.g., UK English, Male, Female)
+            utterance.rate = 1.0; 
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // ==========================================
+        // MODULE 2: SCREEN RECORDER
+        // ==========================================
         let mediaRecorder; let recordedChunks = []; let screenStream, camStream, micStream; let animationFrameId;
         const canvas = document.getElementById('rec-canvas'); const ctx = canvas.getContext('2d'); const preview = document.getElementById('rec-preview');
 
